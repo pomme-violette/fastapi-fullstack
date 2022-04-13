@@ -1,0 +1,38 @@
+version: "2"
+
+services:
+  fastapi:
+    build: ./src/api
+    command: python main.py
+    expose:
+      - 5000
+    env_file: src/api/.env
+    volumes:
+      - fastapi:/var/run/fastapi
+  front:
+    stdin_open: true
+    build:
+      context: ./src/front
+      dockerfile: Dockerfile
+    command: yarn start
+    expose:
+      - 3000
+    env_file:
+      - src/front/.env
+    volumes:
+      - ./src/front:/usr/src/
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - ./fastapi.deploy.conf:/etc/nginx/conf.d/default.conf
+      - ./src/api/ssl:/etc/nginx/certs
+    depends_on:
+      - front
+volumes:
+  fastapi:
+    driver: "local"
